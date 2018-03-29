@@ -29,7 +29,11 @@ func TestSingleKeyReturn(t *testing.T) {
     expected := []string{"m1"} 
     t.Log("Querying Store for", string(query))
 
-    res := store.QueryStore(query)
+    res, err := store.QueryStore(query)
+
+    if err != nil {
+        t.Error(err)
+    }
 
     t.Log("Store returned", res, "Expect", expected)
 
@@ -43,7 +47,11 @@ func TestMultipleKeyReturn(t *testing.T) {
     expected := []string{"m1", "m3"} 
     t.Log("Querying Store for", string(query))
 
-    res := store.QueryStore(query)
+    res, err := store.QueryStore(query)
+
+    if err != nil {
+        t.Error(err)
+    }
 
     t.Log("Store returned", res, "Expect", expected)
 
@@ -67,7 +75,8 @@ func TestMain(m *testing.M) {
                     "m4": {"key1": "asdasdb"}
                 }`)
 
-    store.InitializeStore(byt)
+    store.InitializeStore()
+    store.UpdateStore(byt)
 
     os.Exit(m.Run())
 }
