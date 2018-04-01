@@ -4,11 +4,22 @@ import (
 	"testing"
 	"os"
 	"fmt"
+    "encoding/json"
 	)
 
 var store Store
 
-func CheckResults(res, expected []string) error{
+func CheckResults(jsres, jsexpected []byte) error{
+    var res, expected []string
+
+    if err := json.Unmarshal(jsres, &res); err != nil {
+        return err  
+    }
+
+    if err := json.Unmarshal(jsexpected, &expected); err != nil {
+        return err  
+    }
+
 	for _, expKey := range expected {
         found := false
         for _, key := range res {
@@ -26,7 +37,7 @@ func CheckResults(res, expected []string) error{
 
 func TestSingleKeyReturn(t *testing.T) {
     query := []byte(`{"num": "6.13","strs": "a"}`)
-    expected := []string{"m1"} 
+    expected := []byte(`["m1"]`)
     t.Log("Querying Store for", string(query))
 
     res, err := store.QueryStore(query)
@@ -35,7 +46,7 @@ func TestSingleKeyReturn(t *testing.T) {
         t.Error(err)
     }
 
-    t.Log("Store returned", res, "Expect", expected)
+    t.Log("Store returned", string(res), "Expect", string(expected))
 
     if err := CheckResults(res, expected); err != nil {
     	t.Error(err)
@@ -44,7 +55,7 @@ func TestSingleKeyReturn(t *testing.T) {
 
 func TestMultipleKeyReturn(t *testing.T) {
     query := []byte(`{"strs": "a"}`)
-    expected := []string{"m1", "m3"} 
+    expected := []byte(`["m1","m3"]`)
     t.Log("Querying Store for", string(query))
 
     res, err := store.QueryStore(query)
@@ -53,7 +64,7 @@ func TestMultipleKeyReturn(t *testing.T) {
         t.Error(err)
     }
 
-    t.Log("Store returned", res, "Expect", expected)
+    t.Log("Store returned", string(res), "Expect", string(expected))
 
     if err := CheckResults(res, expected); err != nil {
     	t.Error(err)

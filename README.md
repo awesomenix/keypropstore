@@ -19,7 +19,7 @@ Usage:
 - UpdateStore with Key and its Properties using JSON format
 
 ```golang
-	store.UpdateStore(byt)
+    store.UpdateStore(byt)
 ```
 
 - Querying the Store using JSON, optional multiple key value property (always AND, query multiple times for OR), return keys string array

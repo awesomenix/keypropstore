@@ -97,13 +97,13 @@ func (s *Store) UpdateStore(byt []byte) error {
 // Query Store with single/multiple properties
 // Properties are AND only, if an OR is required, query multiple times
 // OR could be supported, but keeping it simple for now
-func (s *Store) QueryStore(jsQuery []byte) ([]string, error) {
+func (s *Store) QueryStore(jsQuery []byte) ([]byte, error) {
     keys := make([]string, 0)
 
     var query map[string]string
 
     if err := json.Unmarshal(jsQuery, &query); err != nil {
-        return keys, err
+        return nil, err
     }
 
     q := make([]string, 0)
@@ -125,5 +125,7 @@ func (s *Store) QueryStore(jsQuery []byte) ([]string, error) {
         keys = intersect(keys, keyList)
     }
 
-    return keys, nil
+    b, err:= json.Marshal(keys)
+
+    return b, err
 }
