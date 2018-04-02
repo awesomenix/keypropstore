@@ -39,9 +39,9 @@ func UpdateStore(s Store, byt []byte) error {
 		for valkey, valval := range value {
 			keyval := GenerateKey(valkey, valval)
 			err := s.Update(keyval, key)
-            if err != nil {
-                return err
-            }
+			if err != nil {
+				return err
+			}
 		}
 	}
 
