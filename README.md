@@ -3,6 +3,7 @@
 Simulates column store, where a key could be tagged with multiple key value properties. Query to property/properties would return the keys associated with the property/properties
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/awesomenix/keypropstore)](https://goreportcard.com/report/github.com/awesomenix/keypropstore)
+[![Build Status](https://travis-ci.org/awesomenix/keypropstore.svg?branch=master)](https://travis-ci.org/awesomenix/keypropstore)
 
 Usage:
 
