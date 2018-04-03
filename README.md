@@ -39,3 +39,8 @@ Usage:
     query := []byte(`{"num": "6.13","strs": "a"}`)
     res, err := QueryStore(inMemStore, query)
 ```
+- Serialize the Store to JSON, use JSON to Deserialize to other store
+```golang
+    res, err := SerializeStore(inMemStore)
+    err := DeSerializeStore(badgerStore, res)
+```
