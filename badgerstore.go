@@ -111,3 +111,34 @@ func (s *BadgerStore) Query(key string) ([]string, error) {
 
 	return keyList, nil
 }
+
+func (s *BadgerStore) Serialize() (map[string][]string, error) {
+	store := make(map[string][]string)
+	err := s.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			key := item.Key()
+			jsStoreValue, err := item.Value()
+			if err != nil {
+				return err
+			}
+			// Deserialize the JSON value to string array
+			var keyList []string
+			if err := json.Unmarshal(jsStoreValue, &keyList); err != nil {
+				return err
+			}
+			store[string(key)] = keyList
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return store, nil
+}

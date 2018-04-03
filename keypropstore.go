@@ -12,6 +12,7 @@ type Store interface {
 	Shutdown() error
 	Update(key, value string) error
 	Query(key string) ([]string, error)
+	Serialize() (map[string][]string, error)
 }
 
 func InitializeStore(s Store, cfg Config) error {
@@ -38,8 +39,7 @@ func UpdateStore(s Store, byt []byte) error {
 	for key, value := range dat {
 		for valkey, valval := range value {
 			keyval := GenerateKey(valkey, valval)
-			err := s.Update(keyval, key)
-			if err != nil {
+			if err := s.Update(keyval, key); err != nil {
 				return err
 			}
 		}
@@ -84,4 +84,38 @@ func QueryStore(s Store, jsQuery []byte) ([]byte, error) {
 	b, err := json.Marshal(keys)
 
 	return b, err
+}
+
+// Serialize store to JSON
+// useful to backup store or for syncing to other stores
+// {"propkey1:propvalue1" : ["key1", "key2"], "propkey2:propvalue2" : ["key2"] ...}
+func SerializeStore(s Store) ([]byte, error) {
+	keyPropStore, err := s.Serialize()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(keyPropStore)
+}
+
+// DeSerialize JSON and Update current store
+// useful to restore store or for updating alternate store
+// {"key1" : {"propkey1" : "propvalue1", "propkey2" : "propvalue2"}, "key2" ...}
+func DeSerializeStore(s Store, jsBuffer []byte) error {
+	var keyPropStore map[string][]string
+
+	if err := json.Unmarshal(jsBuffer, &keyPropStore); err != nil {
+		return err
+	}
+
+	for key, valueArray := range keyPropStore {
+		for _, value := range valueArray {
+			if err := s.Update(key, value); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

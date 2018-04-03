@@ -56,3 +56,10 @@ func (s *InMemoryStore) Query(key string) ([]string, error) {
 
 	return keyList, nil
 }
+
+func (s *InMemoryStore) Serialize() (map[string][]string, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	return s.store, nil
+}
