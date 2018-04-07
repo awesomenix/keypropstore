@@ -16,4 +16,4 @@ Simulates a column store, where a key could be tagged with multiple key value pr
 
 ## Store Core
 
-Keypropstore consists of multiple [core stores](CORE.md), local and/or aggregate.
+Keypropstore consists of multiple [store core](CORE.md), local and/or aggregate.
