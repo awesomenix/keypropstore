@@ -1,12 +1,13 @@
-package keypropstore
+package core
 
 import (
 	"errors"
 	"fmt"
-	"github.com/dgraph-io/badger"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/dgraph-io/badger"
 )
 
 func testStoreSingleKeyReturn(s Store, t *testing.T) error {

@@ -1,9 +1,10 @@
-package keypropstore
+package core
 
 import (
 	"encoding/json"
-	"github.com/dgraph-io/badger"
 	"strings"
+
+	"github.com/dgraph-io/badger"
 )
 
 // Store (Key, Value), value in JSON format

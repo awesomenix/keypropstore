@@ -1,4 +1,4 @@
-package keypropstore
+package core
 
 import (
 	"errors"

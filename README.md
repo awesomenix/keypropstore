@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/awesomenix/keypropstore)](https://goreportcard.com/report/github.com/awesomenix/keypropstore) [![Build Status](https://travis-ci.org/awesomenix/keypropstore.svg?branch=master)](https://travis-ci.org/awesomenix/keypropstore)
 
-Simulates a column store, where a key could be tagged with multiple key value properties. 
+Simulates a column store, where a key could be tagged with multiple key value properties.
 
 - Multiple services could report keys with associated properties, it will appended the local store.
 - Query for property/properties would return the keys associated with those property/properties from local store (default)
@@ -16,4 +16,4 @@ Simulates a column store, where a key could be tagged with multiple key value pr
 
 ## Store Core
 
-Keypropstore consists of multiple [store core](CORE.md), local and/or aggregate.
+Keypropstore consists of multiple [store core](docs/CORE.md), local and/or aggregate.

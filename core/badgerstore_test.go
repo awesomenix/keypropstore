@@ -1,9 +1,10 @@
-package keypropstore
+package core
 
 import (
-	"github.com/dgraph-io/badger"
 	"os"
 	"testing"
+
+	"github.com/dgraph-io/badger"
 )
 
 func TestBadgerStoreSingleKey(t *testing.T) {
