@@ -8,6 +8,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func (ctx *Context) registerRoutes() {
+	ctx.appRoutes = []Route{
+		Route{"GET", "/store/:store/query", ctx.queryStore},
+		Route{"POST", "/store/:store/update", ctx.updateStore},
+	}
+}
+
 func (ctx *Context) queryStore(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	queryParams := r.URL.Query()
 
