@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -18,6 +19,7 @@ func NewAppRouter(ctx *Context) http.Handler {
 	router := httprouter.New()
 	// Register default routes, which typically provides healtcheck and prof
 	for _, route := range defaultRoutes {
+		log.Println("Registering Route", APIVERSION+route.RouteURI)
 		router.Handle(route.Method, APIVERSION+route.RouteURI, LoggerMiddleware(route.Handler))
 	}
 
