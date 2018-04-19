@@ -19,11 +19,12 @@ func NewAppRouter(ctx *Context) http.Handler {
 	router := httprouter.New()
 	// Register default routes, which typically provides healtcheck and prof
 	for _, route := range defaultRoutes {
-		log.Println("Registering Route", APIVERSION+route.RouteURI)
+		log.Println("Registering Default Route", APIVERSION+route.RouteURI)
 		router.Handle(route.Method, APIVERSION+route.RouteURI, LoggerMiddleware(route.Handler))
 	}
 
 	for _, route := range ctx.appRoutes {
+		log.Println("Registering App Route", APIVERSION+route.RouteURI)
 		router.Handle(route.Method, APIVERSION+route.RouteURI, LoggerMiddleware(route.Handler))
 	}
 
