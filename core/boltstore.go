@@ -2,56 +2,63 @@ package core
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 
-	"github.com/dgraph-io/badger"
+	"github.com/boltdb/bolt"
 )
 
-// Store (Key, Value), value in JSON format
+const boltBucket string = "keypropstore"
 
-type BadgerStore struct {
-	db *badger.DB
+// BoltStore (Key, Value), value in JSON format
+type BoltStore struct {
+	db *bolt.DB
+}
+
+// BoltStoreConfig configuration for path, filemode and options
+type BoltStoreConfig struct {
+	path    string
+	mode    os.FileMode
+	options *bolt.Options
 }
 
 // Initialize Store with custom configuration
-func (s *BadgerStore) Initialize(cfg Config) error {
-	var opts badger.Options
+func (s *BoltStore) Initialize(cfg Config) error {
+	var opts *BoltStoreConfig
 	if cfg != nil {
-		opts = cfg.(badger.Options)
+		opts = cfg.(*BoltStoreConfig)
 	} else {
-		opts = badger.DefaultOptions
-		opts.Dir = "./badgerdb"
-		opts.ValueDir = "./badgerdb"
+		opts = &BoltStoreConfig{"./boltdb", 600, nil}
 	}
 
-	db, err := badger.Open(opts)
+	db, err := bolt.Open(opts.path, opts.mode, opts.options)
 	s.db = db
 	return err
 }
 
-func (s *BadgerStore) Shutdown() error {
+func (s *BoltStore) Shutdown() error {
 	return s.db.Close()
 }
 
-func (s *BadgerStore) Update(key, value string) error {
+func (s *BoltStore) Update(key, value string) error {
 	var jsStoreValue []byte = nil
+
+	s.db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(boltBucket))
+		return err
+	})
+
 	// Check if the key exists in db
 	// if its does return the JSON value
-	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(key))
-		if err != nil {
-			return err
-		}
-		byteVal, err := item.Value()
-		if err != nil {
-			return err
-		}
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(boltBucket))
+		byteVal := bucket.Get([]byte(key))
 		jsStoreValue = byteVal
 		return nil
 	})
 
 	// if there was an error other than key not found, bubble up the error
-	if err != nil && err != badger.ErrKeyNotFound {
+	if err != nil {
 		return err
 	}
 
@@ -75,10 +82,12 @@ func (s *BadgerStore) Update(key, value string) error {
 		}
 
 		// Update DB
-		err = s.db.Update(func(txn *badger.Txn) error {
-			err := txn.Set([]byte(key), jsValue)
+		err = s.db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte(boltBucket))
+			err := b.Put([]byte(key), jsValue)
 			return err
 		})
+
 		if err != nil {
 			return err
 		}
@@ -87,21 +96,16 @@ func (s *BadgerStore) Update(key, value string) error {
 	return nil
 }
 
-func (s *BadgerStore) Query(key string) ([]string, error) {
+func (s *BoltStore) Query(key string) ([]string, error) {
 	var jsStoreValue []byte
 	// Get the JSON value for this key
-	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(key))
-		if err != nil {
-			return err
-		}
-		byteVal, err := item.Value()
-		if err != nil {
-			return err
-		}
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(boltBucket))
+		byteVal := bucket.Get([]byte(key))
 		jsStoreValue = byteVal
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -115,28 +119,22 @@ func (s *BadgerStore) Query(key string) ([]string, error) {
 	return keyList, nil
 }
 
-func (s *BadgerStore) Serialize() (map[string][]string, error) {
+func (s *BoltStore) Serialize() (map[string][]string, error) {
 	store := make(map[string][]string)
-	err := s.db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = 10
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		for it.Rewind(); it.Valid(); it.Next() {
-			item := it.Item()
-			key := item.Key()
-			jsStoreValue, err := item.Value()
-			if err != nil {
-				return err
-			}
+	err := s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte([]byte(boltBucket)))
+
+		err := bucket.ForEach(func(key, jsStoreValue []byte) error {
 			// Deserialize the JSON value to string array
 			var keyList []string
 			if err := json.Unmarshal(jsStoreValue, &keyList); err != nil {
 				return err
 			}
 			store[string(key)] = keyList
-		}
-		return nil
+			return nil
+		})
+
+		return err
 	})
 
 	if err != nil {
