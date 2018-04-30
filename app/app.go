@@ -5,51 +5,116 @@ import (
 	"net/http"
 
 	"github.com/awesomenix/keypropstore/core"
+	"github.com/dgraph-io/badger"
 )
 
 // APIVERSION current supported version
 const APIVERSION string = "/v1"
 
+// CoreStores contains primary and optional backup store
+type CoreStores struct {
+	primary core.Store
+	backup  core.Store
+}
+
 // Context stores local and aggregate stores
 type Context struct {
-	stores    map[string]core.Store
+	config    Config
+	stores    map[string]*CoreStores
 	appRoutes []Route
 }
 
 // CreateStore specified in Configuration
-func createStore(storeType string) core.Store {
+func createStore(storeType, storeDir string) (core.Store, error) {
 	switch storeType {
 	case "InMemory":
-		return new(core.InMemoryStore)
+		store := new(core.InMemoryStore)
+		return store, core.InitializeStore(store, nil)
 	case "BadgerDB":
-		return new(core.BadgerStore)
+		opts := badger.DefaultOptions
+		opts.Dir = storeDir
+		opts.ValueDir = storeDir
+		store := new(core.BadgerStore)
+		return store, core.InitializeStore(store, opts)
+	case "BoltDB":
+		opts := &core.BoltStoreConfig{storeDir, 600, nil}
+		store := new(core.BoltStore)
+		return store, core.InitializeStore(store, opts)
 	}
-	return new(core.InMemoryStore)
+	store := new(core.InMemoryStore)
+	return store, core.InitializeStore(store, nil)
 }
 
 // InitializeStores initializes all the predefined store in configuration
 func (ctx *Context) InitializeStores() error {
-	ctx.stores = make(map[string]core.Store)
-	ctx.stores["local"] = createStore("InMemory")
-	return core.InitializeStore(ctx.stores["local"], nil)
+	var err error
+	ctx.stores = make(map[string]*CoreStores)
+	for _, store := range ctx.config.Stores {
+		// Initialize primary in memory store
+		log.Printf("Initializing Primary InMemoryStore %s\n", store.Name)
+		newstore := &CoreStores{}
+		var localerr error
+		if newstore.primary, localerr = createStore("InMemory", ""); localerr != nil {
+			err = localerr
+		}
+		// Initialize backup store if defined
+		if len(store.Backup) > 0 {
+			log.Printf("Initializing Backup Store %s of type %s, backup directory %s\n", store.Name, store.Backup, store.Backupdir)
+			var localerr error
+			if newstore.backup, localerr = createStore(store.Backup, store.Backupdir); localerr != nil {
+				err = localerr
+			} else {
+				// Once initialized we need to restore the primary store from backup store
+				jsStore, serr := core.SerializeStore(newstore.backup)
+				if serr != nil {
+					err = serr
+				} else {
+					if dserr := core.DeSerializeStore(newstore.primary, jsStore); dserr != nil {
+						err = dserr
+					}
+				}
+			}
+		}
+		ctx.stores[store.Name] = newstore
+	}
+	return err
 }
 
 // ShutdownStores shutsdown all the predefined store in configuration
 func (ctx *Context) ShutdownStores() error {
-	return core.ShutdownStore(ctx.stores["local"])
+	var err error
+	for _, store := range ctx.stores {
+		// shutdown primary store
+		if localerr := core.ShutdownStore(store.primary); localerr != nil {
+			err = localerr
+		}
+		// shutdown backup stores if any
+		if store.backup != nil {
+			if localerr := core.ShutdownStore(store.backup); localerr != nil {
+				err = localerr
+			}
+		}
+	}
+	return err
 }
 
 // Execute App context creating router handling multiple REST API
 func (ctx *Context) Execute() {
+	// register default and app routes
 	ctx.registerRoutes()
 	appRouter := NewAppRouter(ctx)
-	log.Fatal(http.ListenAndServe(":8080", appRouter))
+	log.Fatal(http.ListenAndServe(":"+ctx.config.Port, appRouter))
 }
 
 // Execute creates a local app context and Executes the context
 func Execute() {
 	ctx := Context{}
+	// Initialize configuration
+	ctx.config.Initialize("config", "./config")
+	// Initialize any stores, primary and backup
 	ctx.InitializeStores()
+	// Defer the shutdown of all the stores
 	defer ctx.ShutdownStores()
+	// Execute
 	ctx.Execute()
 }

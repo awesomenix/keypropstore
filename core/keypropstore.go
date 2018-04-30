@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 )
 
+// Config provides a interface for stores to have additional config provided during initialization
+// Example: boltdb/badgerdb could provide directory name to store the db
 type Config interface {
 }
 
+// Store interface
 type Store interface {
 	Initialize(cfg Config) error
 	Shutdown() error
@@ -15,15 +18,17 @@ type Store interface {
 	Serialize() (map[string][]string, error)
 }
 
+// InitializeStore with optional configuration
 func InitializeStore(s Store, cfg Config) error {
 	return s.Initialize(cfg)
 }
 
+// ShutdownStore to close any open file handles, or flush keys to store
 func ShutdownStore(s Store) error {
 	return s.Shutdown()
 }
 
-// Update Store called with list of Key and Associated properties
+// UpdateStore called with list of Key and Associated properties
 // Check for consistncy of input json
 // Converts
 // {"m1": {"num": "6.13","strs": "a","key1": "b"}, "m2": {"num": "6.13","key1": "bddd"}}
@@ -48,7 +53,7 @@ func UpdateStore(s Store, byt []byte) error {
 	return nil
 }
 
-// Query Store with single/multiple properties
+// QueryStore with single/multiple properties
 // Properties are AND only, if an OR is required, query multiple times
 // OR could be supported, but keeping it simple for now
 func QueryStore(s Store, jsQuery []byte) ([]byte, error) {
@@ -86,7 +91,7 @@ func QueryStore(s Store, jsQuery []byte) ([]byte, error) {
 	return b, err
 }
 
-// Serialize store to JSON
+// SerializeStore to JSON
 // useful to backup store or for syncing to other stores
 // {"propkey1:propvalue1" : ["key1", "key2"], "propkey2:propvalue2" : ["key2"] ...}
 func SerializeStore(s Store) ([]byte, error) {
@@ -99,7 +104,7 @@ func SerializeStore(s Store) ([]byte, error) {
 	return json.Marshal(keyPropStore)
 }
 
-// DeSerialize JSON and Update current store
+// DeSerializeStore  deserializes JSON and Updates current store
 // useful to restore store or for updating alternate store
 // {"key1" : {"propkey1" : "propvalue1", "propkey2" : "propvalue2"}, "key2" ...}
 func DeSerializeStore(s Store, jsBuffer []byte) error {

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -77,7 +76,7 @@ func testStoreSerializeDeSerialize(oldStore Store, newStore Store, t *testing.T)
 	}
 
 	if strings.Compare(string(oldRes), string(newRes)) != 0 {
-		err := errors.New(fmt.Sprintf("Expected Old Store %s to be same as New Store %s", string(oldRes), string(newRes)))
+		err := fmt.Errorf("Expected Old Store %s to be same as New Store %s", string(oldRes), string(newRes))
 		t.Error(err)
 		return err
 	}
@@ -85,7 +84,7 @@ func testStoreSerializeDeSerialize(oldStore Store, newStore Store, t *testing.T)
 	return nil
 }
 
-func TestCrossStoreSerializeDeSerialize(t *testing.T) {
+func testCrossStoreSerializeDeSerialize(t *testing.T) {
 	inMemStore := &InMemoryStore{}
 	InitializeStore(inMemStore, nil)
 	defer ShutdownStore(inMemStore)
@@ -110,7 +109,7 @@ func TestCrossStoreSerializeDeSerialize(t *testing.T) {
 	testStoreSerializeDeSerialize(inMemStore, badgerStore, t)
 }
 
-func TestMoreCrossStoreSerializeDeSerialize(t *testing.T) {
+func testMoreCrossStoreSerializeDeSerialize(t *testing.T) {
 	directory := "./badgerdb"
 	os.RemoveAll(directory)
 	defer os.RemoveAll(directory)

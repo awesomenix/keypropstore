@@ -17,9 +17,9 @@ type BoltStore struct {
 
 // BoltStoreConfig configuration for path, filemode and options
 type BoltStoreConfig struct {
-	path    string
-	mode    os.FileMode
-	options *bolt.Options
+	Path    string
+	Mode    os.FileMode
+	Options *bolt.Options
 }
 
 // Initialize Store with custom configuration
@@ -31,17 +31,19 @@ func (s *BoltStore) Initialize(cfg Config) error {
 		opts = &BoltStoreConfig{"./boltdb", 600, nil}
 	}
 
-	db, err := bolt.Open(opts.path, opts.mode, opts.options)
+	db, err := bolt.Open(opts.Path, opts.Mode, opts.Options)
 	s.db = db
 	return err
 }
 
+// Shutdown db, by closing all the open handles
 func (s *BoltStore) Shutdown() error {
 	return s.db.Close()
 }
 
+// Update db with key value pair
 func (s *BoltStore) Update(key, value string) error {
-	var jsStoreValue []byte = nil
+	var jsStoreValue []byte
 
 	s.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(boltBucket))
@@ -96,6 +98,7 @@ func (s *BoltStore) Update(key, value string) error {
 	return nil
 }
 
+// Query for key, return value would be a list of keys associated with the property
 func (s *BoltStore) Query(key string) ([]string, error) {
 	var jsStoreValue []byte
 	// Get the JSON value for this key
@@ -119,6 +122,7 @@ func (s *BoltStore) Query(key string) ([]string, error) {
 	return keyList, nil
 }
 
+// Serialize store to backup, could be optionally compressed
 func (s *BoltStore) Serialize() (map[string][]string, error) {
 	store := make(map[string][]string)
 	err := s.db.View(func(tx *bolt.Tx) error {

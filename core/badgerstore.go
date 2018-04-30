@@ -9,6 +9,7 @@ import (
 
 // Store (Key, Value), value in JSON format
 
+// BadgerStore store for db
 type BadgerStore struct {
 	db *badger.DB
 }
@@ -29,12 +30,14 @@ func (s *BadgerStore) Initialize(cfg Config) error {
 	return err
 }
 
+// Shutdown db, by closing all the open handles
 func (s *BadgerStore) Shutdown() error {
 	return s.db.Close()
 }
 
+// Update db with key value pair
 func (s *BadgerStore) Update(key, value string) error {
-	var jsStoreValue []byte = nil
+	var jsStoreValue []byte
 	// Check if the key exists in db
 	// if its does return the JSON value
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -87,6 +90,7 @@ func (s *BadgerStore) Update(key, value string) error {
 	return nil
 }
 
+// Query for key, return value would be a list of keys associated with the property
 func (s *BadgerStore) Query(key string) ([]string, error) {
 	var jsStoreValue []byte
 	// Get the JSON value for this key
@@ -115,6 +119,7 @@ func (s *BadgerStore) Query(key string) ([]string, error) {
 	return keyList, nil
 }
 
+// Serialize store to backup, could be optionally compressed
 func (s *BadgerStore) Serialize() (map[string][]string, error) {
 	store := make(map[string][]string)
 	err := s.db.View(func(txn *badger.Txn) error {

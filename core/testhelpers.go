@@ -12,6 +12,7 @@ var byt = []byte(`{
                     "m4": {"key1": "asdasdb"}
                 }`)
 
+// CheckResults current vs expected to error in case there is a mismatch
 func CheckResults(jsres, jsexpected []byte) error {
 	var res, expected []string
 

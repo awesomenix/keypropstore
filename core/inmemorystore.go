@@ -1,13 +1,12 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 )
 
-// Concurrent friendly Store
+// InMemoryStore is Concurrent friendly Store
 // Map of Property and List of Keys associated with that property
 type InMemoryStore struct {
 	store map[string][]string
@@ -20,11 +19,12 @@ func (s *InMemoryStore) Initialize(cfg Config) error {
 	return nil
 }
 
-// Not much to do while shutdown
+// Shutdown -Not much to do since its inmemory
 func (s *InMemoryStore) Shutdown() error {
 	return nil
 }
 
+// Update key value pair
 func (s *InMemoryStore) Update(key, value string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -43,6 +43,7 @@ func (s *InMemoryStore) Update(key, value string) error {
 	return nil
 }
 
+// Query for key, return value would be a list of keys associated with the property
 func (s *InMemoryStore) Query(key string) ([]string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -51,12 +52,13 @@ func (s *InMemoryStore) Query(key string) ([]string, error) {
 	if !ok {
 		// property may not, thats ok since we just have to return empty
 		// but at same time we should stop continuing the search since the intersection would be empty
-		return nil, errors.New(fmt.Sprintf("Error querying property %s", key))
+		return nil, fmt.Errorf("Error querying property %s", key)
 	}
 
 	return keyList, nil
 }
 
+// Serialize store to backup, could be optionally compressed
 func (s *InMemoryStore) Serialize() (map[string][]string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

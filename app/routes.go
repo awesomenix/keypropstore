@@ -38,7 +38,7 @@ func (ctx *Context) queryStore(w http.ResponseWriter, r *http.Request, httpParam
 		return
 	}
 
-	jsRes, err := core.QueryStore(store, propQuery)
+	jsRes, err := core.QueryStore(store.primary, propQuery)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
@@ -69,11 +69,20 @@ func (ctx *Context) updateStore(w http.ResponseWriter, r *http.Request, httpPara
 		return
 	}
 
-	err = core.UpdateStore(store, jsReq)
+	err = core.UpdateStore(store.primary, jsReq)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
+	}
+
+	if store.backup != nil {
+		err = core.UpdateStore(store.backup, jsReq)
+
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 
 	respondOK(w, "ok")
@@ -89,7 +98,7 @@ func (ctx *Context) backupStore(w http.ResponseWriter, r *http.Request, httpPara
 		return
 	}
 
-	jsRes, err := core.SerializeStore(store)
+	jsRes, err := core.SerializeStore(store.primary)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
@@ -120,11 +129,20 @@ func (ctx *Context) restoreStore(w http.ResponseWriter, r *http.Request, httpPar
 		return
 	}
 
-	err = core.DeSerializeStore(store, jsReq)
+	err = core.DeSerializeStore(store.primary, jsReq)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
+	}
+
+	if store.backup != nil {
+		err = core.DeSerializeStore(store.backup, jsReq)
+
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 
 	respondOK(w, "ok")
