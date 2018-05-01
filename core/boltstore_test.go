@@ -63,7 +63,7 @@ func TestBoltStoreSerializeDeSerialize(t *testing.T) {
 	os.RemoveAll(directoryNew)
 	defer os.RemoveAll(directoryNew)
 
-	opts.path = directoryNew
+	opts.Path = directoryNew
 
 	boltStoreNew := new(BoltStore)
 	InitializeStore(boltStoreNew, opts)

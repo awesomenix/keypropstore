@@ -22,7 +22,7 @@ var defaultRoutes = []Route{
 	Route{"GET", "/debug/pprof/mutex", MutexHandler},
 }
 
-// HealthCheckHandler provides health check for external montioring applications
+// HealthCheckHandler provides health check for external monitoring applications
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	respondOK(w, "ok")
 }

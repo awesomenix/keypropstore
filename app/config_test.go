@@ -5,11 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/awesomenix/keypropstore/app"
 )
 
-func compareWithExpected(cfg, expectedcfg *app.Config) error {
+func compareWithExpected(cfg, expectedcfg *Config) error {
 	if cfg.Port != "8080" {
 		return fmt.Errorf("Port %s doesnt match expected 8080", cfg.Port)
 	}
@@ -52,7 +50,7 @@ func TestBasicConfig(t *testing.T) {
 	const filePrefix string = "testcfg"
 	fileName := fileDir + filePrefix + ".yml"
 
-	cfg := &app.Config{}
+	cfg := &Config{}
 	buf := []byte(`
 Port : 8080
 Stores :
@@ -73,11 +71,11 @@ Stores :
 
 	cfg.Log()
 
-	stores := make([]app.Store, 1)
+	stores := make([]Store, 1)
 
 	stores[0].Name = "local"
 
-	expectedCfg := &app.Config{"8080", stores}
+	expectedCfg := &Config{"8080", stores}
 
 	err = compareWithExpected(cfg, expectedCfg)
 	if err != nil {
@@ -91,7 +89,7 @@ func TestMultipleStoreConfig(t *testing.T) {
 	const filePrefix string = "testcfg"
 	fileName := fileDir + filePrefix + ".yml"
 
-	cfg := &app.Config{}
+	cfg := &Config{}
 	buf := []byte(`
 Port : 8080
 Stores :
@@ -114,13 +112,13 @@ Stores :
 
 	cfg.Log()
 
-	stores := make([]app.Store, 3)
+	stores := make([]Store, 3)
 
 	stores[0].Name = "local"
 	stores[1].Name = "second"
 	stores[2].Name = "third"
 
-	expectedCfg := &app.Config{"8080", stores}
+	expectedCfg := &Config{"8080", stores}
 
 	err = compareWithExpected(cfg, expectedCfg)
 	if err != nil {
@@ -134,7 +132,7 @@ func TestFullConfig(t *testing.T) {
 	const filePrefix string = "testcfg"
 	fileName := fileDir + filePrefix + ".yml"
 
-	cfg := &app.Config{}
+	cfg := &Config{}
 	buf := []byte(`
 Port : 8080
 Stores :
@@ -166,7 +164,7 @@ Stores :
 
 	cfg.Log()
 
-	stores := make([]app.Store, 3)
+	stores := make([]Store, 3)
 
 	stores[0].Name = "local"
 	stores[0].Backup = "BoltDB"
@@ -179,7 +177,7 @@ Stores :
 	stores[2].Backupdir = "./boltdb"
 	stores[2].AggregateURLs = []string{"URL1", "URL2"}
 
-	expectedCfg := &app.Config{"8080", stores}
+	expectedCfg := &Config{"8080", stores}
 
 	err = compareWithExpected(cfg, expectedCfg)
 	if err != nil {

@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
-
-	"github.com/awesomenix/keypropstore/app"
+	"time"
 )
 
 func TestBasicApp(t *testing.T) {
@@ -28,10 +27,12 @@ Stores :
 		return
 	}
 
-	go app.Execute()
+	go Execute()
+
+	time.Sleep(1 * time.Second)
 
 	postBuf := []byte(`{"m1": {"num": "6.13","strs": "a","key1": "b"}, "m2": {"num": "6.13","key1": "bddd"}}`)
-	respU, postErr := http.Post("http://localhost:8080/v1/store/local/update", "application/json", bytes.NewBuffer(postBuf))
+	respU, postErr := http.Post("http://127.0.0.1:8080/v1/store/local/update", "application/json", bytes.NewBuffer(postBuf))
 	if postErr != nil {
 		t.Error(postErr)
 		return
@@ -43,7 +44,7 @@ Stores :
 	}
 
 	queryBuf := []byte(`{"num": "6.13"}`)
-	resp, perr := http.Post("http://localhost:8080/v1/store/local/query", "application/json", bytes.NewBuffer(queryBuf))
+	resp, perr := http.Post("http://127.0.0.1:8080/v1/store/local/query", "application/json", bytes.NewBuffer(queryBuf))
 
 	if perr != nil {
 		t.Error(perr)
