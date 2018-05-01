@@ -43,16 +43,21 @@ func (s *BoltStore) Shutdown() error {
 
 // Update db with key value pair
 func (s *BoltStore) Update(key, value string) error {
-	var jsStoreValue []byte
-
-	s.db.Update(func(tx *bolt.Tx) error {
+	err := s.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(boltBucket))
 		return err
 	})
 
+	// if there was an error creating the bucket
+	if err != nil {
+		return err
+	}
+
+	var jsStoreValue []byte
+
 	// Check if the key exists in db
 	// if its does return the JSON value
-	err := s.db.View(func(tx *bolt.Tx) error {
+	err = s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(boltBucket))
 		byteVal := bucket.Get([]byte(key))
 		jsStoreValue = byteVal
@@ -100,9 +105,19 @@ func (s *BoltStore) Update(key, value string) error {
 
 // Query for key, return value would be a list of keys associated with the property
 func (s *BoltStore) Query(key string) ([]string, error) {
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(boltBucket))
+		return err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	var jsStoreValue []byte
+
 	// Get the JSON value for this key
-	err := s.db.View(func(tx *bolt.Tx) error {
+	err = s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(boltBucket))
 		byteVal := bucket.Get([]byte(key))
 		jsStoreValue = byteVal
@@ -124,8 +139,19 @@ func (s *BoltStore) Query(key string) ([]string, error) {
 
 // Serialize store to backup, could be optionally compressed
 func (s *BoltStore) Serialize() (map[string][]string, error) {
+
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(boltBucket))
+		return err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	store := make(map[string][]string)
-	err := s.db.View(func(tx *bolt.Tx) error {
+
+	err = s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte([]byte(boltBucket)))
 
 		err := bucket.ForEach(func(key, jsStoreValue []byte) error {
