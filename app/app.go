@@ -1,8 +1,14 @@
 package app
 
 import (
+	"context"
+	"flag"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"time"
 
 	"github.com/awesomenix/keypropstore/core"
 	"github.com/dgraph-io/badger"
@@ -22,6 +28,7 @@ type Context struct {
 	config    Config
 	stores    map[string]*CoreStores
 	appRoutes []Route
+	srv       *http.Server
 }
 
 // CreateStore specified in Configuration
@@ -37,7 +44,7 @@ func createStore(storeType, storeDir string) (core.Store, error) {
 		store := new(core.BadgerStore)
 		return store, core.InitializeStore(store, opts)
 	case "BoltDB":
-		opts := &core.BoltStoreConfig{storeDir, 600, nil}
+		opts := &core.BoltStoreConfig{Path: storeDir, Mode: 600, Options: nil}
 		store := new(core.BoltStore)
 		return store, core.InitializeStore(store, opts)
 	}
@@ -98,23 +105,66 @@ func (ctx *Context) ShutdownStores() error {
 	return err
 }
 
-// Execute App context creating router handling multiple REST API
-func (ctx *Context) Execute() {
+// Create App context creating router handling multiple REST API
+func (ctx *Context) Create() error {
 	// register default and app routes
 	ctx.registerRoutes()
 	appRouter := NewAppRouter(ctx)
-	log.Fatal(http.ListenAndServe(":"+ctx.config.Port, appRouter))
+	ctx.srv = &http.Server{
+		Addr:         ":" + ctx.config.Port,
+		Handler:      appRouter,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second}
+	go func() {
+		if err := ctx.srv.ListenAndServe(); err != nil {
+			if flag.Lookup("test.v") == nil {
+				log.Fatal(err)
+			} else {
+				log.Println(err)
+			}
+		}
+	}()
+	return nil
 }
 
-// Execute creates a local app context and Executes the context
-func Execute() {
-	ctx := Context{}
+// CreateContext creates and sets up context, stores and starts HTTP Server
+func CreateContext() *Context {
+	ctx := &Context{}
 	// Initialize configuration
 	ctx.config.Initialize("config", "./config")
 	// Initialize any stores, primary and backup
 	ctx.InitializeStores()
-	// Defer the shutdown of all the stores
-	defer ctx.ShutdownStores()
-	// Execute
-	ctx.Execute()
+	// Create context
+	ctx.Create()
+
+	return ctx
+}
+
+// DeleteContext app context and HTTP Server
+func DeleteContext(ctx *Context) {
+	// Shutdown of all the stores
+	ctx.ShutdownStores()
+	// Shutdown HTTP server
+	ctx.srv.Shutdown(context.TODO())
+}
+
+func waitForCtrlC() {
+	var exit sync.WaitGroup
+	exit.Add(1)
+
+	var sigc chan os.Signal
+	sigc = make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt)
+	go func() {
+		<-sigc
+		exit.Done()
+	}()
+	exit.Wait()
+}
+
+// Execute starts application and waits for ctrl+c
+func Execute() {
+	ctx := CreateContext()
+	waitForCtrlC()
+	DeleteContext(ctx)
 }
