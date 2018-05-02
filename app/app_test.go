@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 func testBasicUpdateQuery(buf []byte, t *testing.T) {
@@ -22,6 +23,8 @@ func testBasicUpdateQuery(buf []byte, t *testing.T) {
 
 	ctx := CreateContext()
 	defer DeleteContext(ctx)
+
+	time.Sleep(1 * time.Second)
 
 	postBuf := []byte(`{"m1": {"num": "6.13","strs": "a","key1": "b"}, "m2": {"num": "6.13","key1": "bddd"}}`)
 	respU, postErr := http.Post("http://127.0.0.1:8080/v1/store/local/update", "application/json", bytes.NewBuffer(postBuf))
@@ -43,12 +46,12 @@ func testBasicUpdateQuery(buf []byte, t *testing.T) {
 		return
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
-		t.Errorf("Update returned %d, expected success with 200, error: %s", resp.StatusCode, resp.Status)
+		t.Errorf("Query returned %d, expected success with 200, error: %s", resp.StatusCode, resp.Status)
 		return
 	}
-
-	defer resp.Body.Close()
 
 	bodyBytes, rerr := ioutil.ReadAll(resp.Body)
 	if rerr != nil {
@@ -94,6 +97,8 @@ func testNoUpdateQuery(buf []byte, t *testing.T) {
 	ctx := CreateContext()
 	defer DeleteContext(ctx)
 
+	time.Sleep(1 * time.Second)
+
 	queryBuf := []byte(`{"num": "6.13"}`)
 	resp, perr := http.Post("http://127.0.0.1:8080/v1/store/local/query", "application/json", bytes.NewBuffer(queryBuf))
 
@@ -102,12 +107,12 @@ func testNoUpdateQuery(buf []byte, t *testing.T) {
 		return
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
-		t.Errorf("Update returned %d, expected success with 200, error: %s", resp.StatusCode, resp.Status)
+		t.Errorf("Query returned %d, expected success with 200, error: %s", resp.StatusCode, resp.Status)
 		return
 	}
-
-	defer resp.Body.Close()
 
 	bodyBytes, rerr := ioutil.ReadAll(resp.Body)
 	if rerr != nil {
@@ -193,7 +198,7 @@ Stores :
 	testNoUpdateQuery(buf, t)
 }
 
-func TestBoltDBBackup(t *testing.T) {
+/*func TestBoltDBBackup(t *testing.T) {
 
 	buf := []byte(`
 Port : 8080
@@ -206,4 +211,4 @@ Stores :
 	defer os.RemoveAll("./boltdbtest")
 	testBasicUpdateQuery(buf, t)
 	testNoUpdateQuery(buf, t)
-}
+}*/
