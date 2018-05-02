@@ -198,7 +198,10 @@ Stores :
 	testNoUpdateQuery(buf, t)
 }
 
-/*func TestBoltDBBackup(t *testing.T) {
+/*
+// This unittest seems to crash on Mac/Linux
+// panic on db close, requires further investigation, not noticed on badgerdb
+func TestBoltDBBackup(t *testing.T) {
 
 	buf := []byte(`
 Port : 8080
