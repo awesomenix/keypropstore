@@ -27,7 +27,7 @@ func (ctx *Context) Create() error {
 	ctx.registerRoutes()
 	appRouter := NewAppRouter(ctx)
 	ctx.srv = &http.Server{
-		Addr:         ":" + ctx.config.Port,
+		Addr:         "127.0.0.1:" + ctx.config.Port,
 		Handler:      appRouter,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second}
@@ -44,16 +44,21 @@ func (ctx *Context) Create() error {
 }
 
 // CreateContext creates and sets up context, stores and starts HTTP Server
-func CreateContext() *Context {
+func CreateContext(configName, configDir string) *Context {
 	ctx := &Context{}
 	// Initialize configuration
-	ctx.config.Initialize("config", "./config")
+	ctx.config.Initialize(configName, configDir)
 	// Initialize any stores, primary and backup
 	ctx.InitializeStores()
 	// Create context
 	ctx.Create()
 
 	return ctx
+}
+
+// CreateDefaultContext creates and sets up default context, stores and starts HTTP Server
+func CreateDefaultContext() *Context {
+	return CreateContext("config", "./config")
 }
 
 // DeleteContext app context and HTTP Server
@@ -72,7 +77,7 @@ func waitForCtrlC() {
 
 // Execute starts application and waits for ctrl+c
 func Execute() {
-	ctx := CreateContext()
+	ctx := CreateDefaultContext()
 	waitForCtrlC()
 	DeleteContext(ctx)
 }

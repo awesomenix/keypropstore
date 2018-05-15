@@ -1,9 +1,12 @@
 package app
 
 import (
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/awesomenix/keypropstore/core"
 	"github.com/dgraph-io/badger"
@@ -11,8 +14,9 @@ import (
 
 // CoreStores contains primary and optional backup store
 type CoreStores struct {
-	primary core.Store
-	backup  core.Store
+	primary  core.Store
+	backup   core.Store
+	shutdown chan bool
 }
 
 // CreateStore specified in Configuration
@@ -46,6 +50,7 @@ func (ctx *Context) InitializeStores() error {
 		// Initialize primary in memory store
 		log.Printf("Initializing Primary InMemoryStore %s\n", store.Name)
 		newstore := &CoreStores{}
+		newstore.shutdown = make(chan bool, 1)
 		var localerr error
 		if newstore.primary, localerr = createStore("InMemory", ""); localerr != nil {
 			err = localerr
@@ -68,6 +73,9 @@ func (ctx *Context) InitializeStores() error {
 				}
 			}
 		}
+		if len(store.AggregateURLs) > 0 {
+			go ctx.SyncAggregateURLs(newstore, store.AggregateURLs, time.Duration(store.SyncIntervalSec)*time.Second)
+		}
 		ctx.stores[store.Name] = newstore
 	}
 	return err
@@ -77,6 +85,7 @@ func (ctx *Context) InitializeStores() error {
 func (ctx *Context) ShutdownStores() error {
 	var err error
 	for _, store := range ctx.stores {
+		store.shutdown <- true
 		// shutdown primary store
 		if localerr := core.ShutdownStore(store.primary); localerr != nil {
 			err = localerr
@@ -89,4 +98,42 @@ func (ctx *Context) ShutdownStores() error {
 		}
 	}
 	return err
+}
+
+// SyncAggregateURLs performs sync of key values from remote stores
+// Requires Extensive error checking, metrics, alerting
+func (ctx *Context) SyncAggregateURLs(store *CoreStores, aggregateURLs []string, syncIntervalsecs time.Duration) {
+	ticker := time.NewTicker(syncIntervalsecs)
+	for {
+		select {
+		case <-ticker.C:
+			for _, aggregateURL := range aggregateURLs {
+				backupURL := aggregateURL + "/backup"
+				httpResp, httpErr := http.Get(backupURL)
+
+				if httpErr != nil {
+					continue
+				}
+
+				bodyBytes, rerr := ioutil.ReadAll(httpResp.Body)
+				httpResp.Body.Close()
+
+				if rerr != nil {
+					continue
+				}
+				if store.backup != nil {
+					if err := core.DeSerializeStore(store.backup, bodyBytes); err != nil {
+						// Error deserializing the backup store
+					}
+				}
+				if err := core.DeSerializeStore(store.primary, bodyBytes); err != nil {
+					// Error deserializing the primary store
+				}
+			}
+		case <-store.shutdown:
+			ticker.Stop()
+			return
+		}
+	}
+
 }

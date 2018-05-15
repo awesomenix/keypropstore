@@ -11,10 +11,11 @@ import (
 // optional backup store along with backup directory
 // also aggregte urls for aggregating multiple stores into the primary
 type Store struct {
-	Name          string
-	Backup        string
-	Backupdir     string
-	AggregateURLs []string
+	Name            string
+	Backup          string
+	Backupdir       string
+	AggregateURLs   []string
+	SyncIntervalSec int
 }
 
 // Config context for this application
@@ -32,6 +33,7 @@ type Config struct {
 //   - GlobalAggregateMachines :
 //	     Backup : BoltDB
 //       BackupDir : ./boltdb
+//       SyncInterval : 10
 //		 Aggregate:
 //			- URL1
 //			- URL2
@@ -58,7 +60,8 @@ func (cfg *Config) Initialize(name, dir string) error {
 			var store Store
 
 			store.Name = storename.(string)
-
+			// Default sync interval is 10 seconds from aggregate urls
+			store.SyncIntervalSec = 10
 			if istoresettings != nil {
 				setting := istoresettings.(map[interface{}]interface{})
 				if backup, ok := setting["Backup"]; ok {
@@ -67,6 +70,10 @@ func (cfg *Config) Initialize(name, dir string) error {
 
 				if backupdir, ok := setting["BackupDir"]; ok {
 					store.Backupdir = backupdir.(string)
+				}
+
+				if backupdir, ok := setting["SyncInterval"]; ok {
+					store.SyncIntervalSec = backupdir.(int)
 				}
 
 				if aggregate, ok := setting["Aggregate"]; ok {
