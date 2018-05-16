@@ -12,7 +12,7 @@ Simulates a column store, where a key could be tagged with multiple key value pr
 
 ## Architecture
 
-![Architecture](architecture.png)
+![Architecture](Architecture.png)
 
 ## Store Core
 
