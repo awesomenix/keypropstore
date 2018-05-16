@@ -38,10 +38,7 @@ func (s *BoltStore) Initialize(cfg Config) error {
 
 // Shutdown db, by closing all the open handles
 func (s *BoltStore) Shutdown() error {
-	if s.db != nil {
-		return s.db.Close()
-	}
-	return nil
+	return s.db.Close()
 }
 
 // Update db with key value pair

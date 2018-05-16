@@ -314,6 +314,7 @@ Stores :
 
 	defer os.RemoveAll("./boltdbtest")
 	testBasicUpdateQuery(buf, t)
+	time.Sleep(1 * time.Second)
 	testNoUpdateQuery(buf, t)
 }
 
