@@ -31,8 +31,8 @@ func (s *BoltStore) Initialize(cfg Config) error {
 		opts = &BoltStoreConfig{"./boltdb", 600, nil}
 	}
 
-	db, err := bolt.Open(opts.Path, opts.Mode, opts.Options)
-	s.db = db
+	var err error
+	s.db, err = bolt.Open(opts.Path, opts.Mode, opts.Options)
 	return err
 }
 
