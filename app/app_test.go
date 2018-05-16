@@ -300,7 +300,6 @@ Stores :
 	testNoUpdateQuery(buf, t)
 }
 
-/*
 // This unittest seems to crash on Mac/Linux
 // panic on db close, requires further investigation, not noticed on badgerdb
 func TestBoltDBBackup(t *testing.T) {
@@ -316,7 +315,7 @@ Stores :
 	defer os.RemoveAll("./boltdbtest")
 	testBasicUpdateQuery(buf, t)
 	testNoUpdateQuery(buf, t)
-}*/
+}
 
 func TestInMemoryAggregateUpdateQuery(t *testing.T) {
 
@@ -337,5 +336,60 @@ Stores :
 - local:
 `)
 
+	testBasicAggregateQuery(buf1, buf2, t)
+}
+
+func TestBadgerDBAggregateUpdateQuery(t *testing.T) {
+
+	buf1 := []byte(`
+Port : 8080
+Stores :
+- local:
+- aggregate:
+    SyncInterval: 1
+    Backup: BadgerDB
+    BackupDir: ./badgerdbtest 
+    Aggregate:
+    - http://127.0.0.1:8080/v1/store/local
+    - http://127.0.0.1:8081/v1/store/local
+`)
+
+	buf2 := []byte(`
+Port : 8081
+Stores :
+- local:
+    Backup: BadgerDB
+    BackupDir: ./badgerdbtest2 
+`)
+
+	defer os.RemoveAll("./badgerdbtest")
+	defer os.RemoveAll("./badgerdbtest2")
+	testBasicAggregateQuery(buf1, buf2, t)
+}
+
+// This unittest seems to crash on Mac/Linux
+// panic on db close, requires further investigation, not noticed on badgerdb
+func TestBoltDBAggregateUpdateQuery(t *testing.T) {
+
+	buf1 := []byte(`
+Port : 8080
+Stores :
+- local:
+- aggregate:
+    SyncInterval: 1
+    Backup: BoltDB
+    BackupDir: ./boltdbtest 
+    Aggregate:
+    - http://127.0.0.1:8080/v1/store/local
+    - http://127.0.0.1:8081/v1/store/local
+`)
+
+	buf2 := []byte(`
+Port : 8081
+Stores :
+- local:
+`)
+
+	defer os.RemoveAll("./boltdbtest")
 	testBasicAggregateQuery(buf1, buf2, t)
 }

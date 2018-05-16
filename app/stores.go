@@ -50,7 +50,6 @@ func (ctx *Context) InitializeStores() error {
 		// Initialize primary in memory store
 		log.Printf("Initializing Primary InMemoryStore %s\n", store.Name)
 		newstore := &CoreStores{}
-		newstore.shutdown = make(chan bool, 1)
 		var localerr error
 		if newstore.primary, localerr = createStore("InMemory", ""); localerr != nil {
 			err = localerr
@@ -74,6 +73,7 @@ func (ctx *Context) InitializeStores() error {
 			}
 		}
 		if len(store.AggregateURLs) > 0 {
+			newstore.shutdown = make(chan bool)
 			go ctx.SyncAggregateURLs(newstore, store.AggregateURLs, time.Duration(store.SyncIntervalSec)*time.Second)
 		}
 		ctx.stores[store.Name] = newstore
@@ -85,7 +85,10 @@ func (ctx *Context) InitializeStores() error {
 func (ctx *Context) ShutdownStores() error {
 	var err error
 	for _, store := range ctx.stores {
-		store.shutdown <- true
+		if store.shutdown != nil {
+			store.shutdown <- true
+		}
+
 		// shutdown primary store
 		if localerr := core.ShutdownStore(store.primary); localerr != nil {
 			err = localerr
@@ -103,6 +106,7 @@ func (ctx *Context) ShutdownStores() error {
 // SyncAggregateURLs performs sync of key values from remote stores
 // Requires Extensive error checking, metrics, alerting
 func (ctx *Context) SyncAggregateURLs(store *CoreStores, aggregateURLs []string, syncIntervalsecs time.Duration) {
+	defer close(store.shutdown)
 	ticker := time.NewTicker(syncIntervalsecs)
 	for {
 		select {

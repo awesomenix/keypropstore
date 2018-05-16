@@ -1,5 +1,5 @@
-![](KeyPropertyStore_Logo.png)
-
+![](logo.png)
+------
 [![Go Report Card](https://goreportcard.com/badge/github.com/awesomenix/keypropstore)](https://goreportcard.com/report/github.com/awesomenix/keypropstore) [![Build Status](https://travis-ci.org/awesomenix/keypropstore.svg?branch=master)](https://travis-ci.org/awesomenix/keypropstore)
 
 Simulates a column store, where a key could be tagged with multiple key value properties.
@@ -12,7 +12,7 @@ Simulates a column store, where a key could be tagged with multiple key value pr
 
 ## Architecture
 
-![Architecture](Architecture.png)
+![Architecture](architecture.png)
 
 ## Store Core
 
