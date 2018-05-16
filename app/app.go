@@ -44,29 +44,36 @@ func (ctx *Context) Create() error {
 }
 
 // CreateContext creates and sets up context, stores and starts HTTP Server
-func CreateContext(configName, configDir string) *Context {
+func CreateContext(configName, configDir string) (*Context, error) {
 	ctx := &Context{}
 	// Initialize configuration
-	ctx.config.Initialize(configName, configDir)
+	if err := ctx.config.Initialize(configName, configDir); err != nil {
+		return nil, err
+	}
 	// Initialize any stores, primary and backup
-	ctx.InitializeStores()
+	if err := ctx.InitializeStores(); err != nil {
+		return nil, err
+	}
 	// Create context
-	ctx.Create()
+	if err := ctx.Create(); err != nil {
+		return nil, err
+	}
 
-	return ctx
+	return ctx, nil
 }
 
 // CreateDefaultContext creates and sets up default context, stores and starts HTTP Server
-func CreateDefaultContext() *Context {
+func CreateDefaultContext() (*Context, error) {
 	return CreateContext("config", "./config")
 }
 
 // DeleteContext app context and HTTP Server
-func DeleteContext(ctx *Context) {
-	// Shutdown of all the stores
-	ctx.ShutdownStores()
+func DeleteContext(ctx *Context) error {
 	// Shutdown HTTP server
+	// even if there is an error shutting down HTTP its ok to ignore
 	ctx.srv.Shutdown(context.TODO())
+	// Shutdown of all the stores
+	return ctx.ShutdownStores()
 }
 
 func waitForCtrlC() {
@@ -76,8 +83,11 @@ func waitForCtrlC() {
 }
 
 // Execute starts application and waits for ctrl+c
-func Execute() {
-	ctx := CreateDefaultContext()
+func Execute() error {
+	ctx, err := CreateDefaultContext()
+	if err != nil {
+		return err
+	}
 	waitForCtrlC()
-	DeleteContext(ctx)
+	return DeleteContext(ctx)
 }

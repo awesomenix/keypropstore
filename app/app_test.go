@@ -21,7 +21,11 @@ func testBasicUpdateQuery(buf []byte, t *testing.T) {
 		return
 	}
 
-	ctx := CreateDefaultContext()
+	ctx, err := CreateDefaultContext()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	defer DeleteContext(ctx)
 
 	time.Sleep(1 * time.Second)
@@ -94,7 +98,11 @@ func testNoUpdateQuery(buf []byte, t *testing.T) {
 		return
 	}
 
-	ctx := CreateDefaultContext()
+	ctx, err := CreateDefaultContext()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	defer DeleteContext(ctx)
 
 	time.Sleep(1 * time.Second)
@@ -163,10 +171,18 @@ func testBasicAggregateQuery(buf1 []byte, buf2 []byte, t *testing.T) {
 		return
 	}
 
-	ctx := CreateContext(filePrefix1, fileDir+filePrefix1)
+	ctx, err1 := CreateContext(filePrefix1, fileDir+filePrefix1)
+	if err1 != nil {
+		t.Error(err1)
+		return
+	}
 	defer DeleteContext(ctx)
 
-	ctx2 := CreateContext(filePrefix2, fileDir+filePrefix2)
+	ctx2, err2 := CreateContext(filePrefix2, fileDir+filePrefix2)
+	if err2 != nil {
+		t.Error(err2)
+		return
+	}
 	defer DeleteContext(ctx2)
 
 	time.Sleep(1 * time.Second)
