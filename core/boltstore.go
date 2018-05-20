@@ -69,21 +69,27 @@ func (s *BoltStore) Update(key, value string) error {
 		return err
 	}
 
-	var storeValue []string
+	var storeList []string
 
 	// Deserialize JSON value to string array
 	if jsStoreValue != nil {
-		if err := json.Unmarshal(jsStoreValue, &storeValue); err != nil {
+		if err := json.Unmarshal(jsStoreValue, &storeList); err != nil {
 			return err
 		}
+	}
+
+	storeValue := make(map[string]bool)
+
+	for _, value := range storeList {
+		storeValue[value] = true
 	}
 
 	value = strings.ToLower(value)
 
 	// append the current value to JSON
-	if !ContainsKey(value, storeValue) {
-		storeValue = append(storeValue, value)
-		jsValue, err := json.Marshal(storeValue)
+	if _, ok := storeValue[value]; !ok {
+		storeList = append(storeList, value)
+		jsValue, err := json.Marshal(storeList)
 		if err != nil {
 			return err
 		}

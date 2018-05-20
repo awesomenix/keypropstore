@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"strings"
 )
 
 // ArrayIntersect Performs Intersection of two string array
@@ -32,18 +31,4 @@ func ArrayIntersect(a, b []string) []string {
 // GenerateKey returns hash of key value used as a Store Key
 func GenerateKey(key, val string) string {
 	return fmt.Sprintf("%s:%s", key, val)
-}
-
-// ContainsKey checks if the key contains in arr
-func ContainsKey(key string, arr []string) bool {
-	if len(arr) == 0 {
-		return false
-	}
-
-	for _, str := range arr {
-		if strings.Compare(str, key) == 0 {
-			return true
-		}
-	}
-	return false
 }

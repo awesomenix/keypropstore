@@ -30,7 +30,7 @@ func TestInMemStoreMultiple(t *testing.T) {
 	testStoreMultipleKeyReturn(inMemStore, t)
 }
 
-func TestInMemStoreSerializeDeSerialize(t *testing.T) {
+/* func TestInMemStoreSerializeDeSerialize(t *testing.T) {
 	inMemStore := &InMemoryStore{}
 	InitializeStore(inMemStore, nil)
 	defer ShutdownStore(inMemStore)
@@ -45,9 +45,9 @@ func TestInMemStoreSerializeDeSerialize(t *testing.T) {
 	defer ShutdownStore(inMemStoreNew)
 
 	testStoreSerializeDeSerialize(inMemStore, inMemStoreNew, t)
-}
+} */
 
-func BenchmarkInMemStoreQuery(b *testing.B) {
+func BenchmarkInMemStoreUpdateQuery(b *testing.B) {
 	inMemStore := &InMemoryStore{}
 	InitializeStore(inMemStore, nil)
 	defer ShutdownStore(inMemStore)
@@ -59,6 +59,10 @@ func BenchmarkInMemStoreQuery(b *testing.B) {
 
 	query := []byte(`{"strs": "a"}`)
 	for n := 0; n < b.N; n++ {
-		QueryStore(inMemStore, query)
+		_, err = QueryStore(inMemStore, query)
+		if err != nil {
+			b.Error(err)
+			return
+		}
 	}
 }

@@ -9,13 +9,13 @@ import (
 // InMemoryStore is Concurrent friendly Store
 // Map of Property and List of Keys associated with that property
 type InMemoryStore struct {
-	store map[string][]string
+	store map[string]map[string]bool
 	lock  sync.RWMutex
 }
 
 // Initialize Store with custom configuration
 func (s *InMemoryStore) Initialize(cfg Config) error {
-	s.store = make(map[string][]string)
+	s.store = make(map[string]map[string]bool)
 	return nil
 }
 
@@ -28,17 +28,15 @@ func (s *InMemoryStore) Shutdown() error {
 func (s *InMemoryStore) Update(key, value string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	key = strings.ToLower(key)
 
-	storeValue, ok := s.store[key]
-	if !ok {
-		s.store[key] = make([]string, 1)
+	if _, ok := s.store[key]; !ok {
+		s.store[key] = make(map[string]bool)
+		s.store[key][strings.ToLower(value)] = true
+		return nil
 	}
 
-	value = strings.ToLower(value)
-
-	if !ContainsKey(value, storeValue) {
-		s.store[key] = append(storeValue, value)
-	}
+	s.store[key][strings.ToLower(value)] = true
 
 	return nil
 }
@@ -47,12 +45,19 @@ func (s *InMemoryStore) Update(key, value string) error {
 func (s *InMemoryStore) Query(key string) ([]string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	keyList, ok := s.store[key]
+	key = strings.ToLower(key)
+	keySet, ok := s.store[key]
 
 	if !ok {
 		// property may not, thats ok since we just have to return empty
 		// but at same time we should stop continuing the search since the intersection would be empty
 		return nil, fmt.Errorf("Error querying property %s", key)
+	}
+
+	keyList := make([]string, 0)
+
+	for key := range keySet {
+		keyList = append(keyList, key)
 	}
 
 	return keyList, nil
@@ -63,5 +68,15 @@ func (s *InMemoryStore) Serialize() (map[string][]string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	return s.store, nil
+	store := make(map[string][]string)
+
+	for key, keySet := range s.store {
+		keyList := make([]string, 0)
+		for key := range keySet {
+			keyList = append(keyList, key)
+		}
+		store[key] = keyList
+	}
+
+	return store, nil
 }
